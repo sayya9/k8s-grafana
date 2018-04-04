@@ -1,0 +1,37 @@
+- name: Import datasources and dashboards
+  hosts: localhost
+  vars:
+    grafana_host: http://localhost:3000
+    grafana_user: admin
+    grafana_password: admin
+    grafana_datasource: prometheus
+  tasks:
+    - name: import datasources
+      uri:
+        url: "{{ grafana_host }}/api/datasources"
+        method: POST
+        body: "{{ lookup('file', item)}}"
+        body_format: json
+        force_basic_auth: yes
+        user: "{{ grafana_user }}"
+        password: "{{ grafana_password }}"
+        status_code: 200, 409
+        headers:
+          Content-Type: "application/json"
+      with_fileglob:
+        - /data/*-datasource.json
+
+    - name: import dashboards
+      uri:
+        url: "{{ grafana_host }}/api/dashboards/import"
+        method: POST
+        body: '{"dashboard": {{ lookup("file", item) }}, "overwrite": true, "inputs": [{"name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus", "value": "prometheus"}]}'
+        body_format: json
+        force_basic_auth: yes
+        user: "{{ grafana_user }}"
+        password: "{{ grafana_password }}"
+        status_code: 200
+        headers:
+          Content-Type: "application/json"
+      with_fileglob:
+        - /data/*-dashboard.json

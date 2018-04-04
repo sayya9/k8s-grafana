@@ -1,0 +1,78 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ template "fullname" . }}
+  labels:
+{{ include "labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/cm.yaml") . | sha256sum }}
+      labels:
+{{ include "labels.core" . | indent 8 }}
+    spec:
+      initContainers:
+        - name: probe-prometheus
+          image: byrnedo/alpine-curl:latest
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          args: ["prometheus:9090"]
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository}}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          env:
+            # The following env variables set up basic auth twith the default admin user and admin password.
+            - name: GF_AUTH_BASIC_ENABLED
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "true"
+            # - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+            #   value: Admin
+            # does not really work, because of template variables in exported dashboards:
+            - name: GF_DASHBOARDS_JSON_ENABLED
+              value: "true"
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          livenessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            httpGet:
+              path: /dashboard/db/prometheus-stats
+              port: {{ .Values.service.internalPort }}
+          readinessProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            httpGet:
+              path: /
+              port: {{ .Values.service.internalPort }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - name: tz-conf
+              mountPath: /etc/localtime
+        - name: import
+          image: williamyeh/ansible:alpine3
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - "ansible-playbook -i inventory /data/import.yml && top > /dev/null"
+          volumeMounts:
+            - name: tz-conf
+              mountPath: /etc/localtime
+            - name: import
+              mountPath: /data
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+      volumes:
+        - name: tz-conf
+          hostPath:
+            path: /etc/localtime
+        - name: import
+          configMap:
+            name: {{ template "fullname" . }}

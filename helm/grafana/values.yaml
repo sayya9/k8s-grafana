@@ -1,0 +1,23 @@
+global:
+  image:
+    pullPolicy: Always
+  volumes:
+    keep: false
+replicaCount: 1
+image:
+  repository: grafana/grafana
+  tag: 5.0.4
+  pullPolicy: Always
+service:
+  name: grafana
+  type: NodePort
+  externalPort: 3000
+  internalPort: 3000
+  nodePort: 30041
+resources:
+#  limits:
+#    cpu: 500m
+#    memory: 512Mi
+#  requests:
+#    cpu: 100m
+#    memory: 128Mi
