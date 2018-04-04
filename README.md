@@ -46,4 +46,12 @@ node_uname_info{nodename="deploy01"}
 {app="prometheus-prometheus",component="node-exporter",cpu="cpu0",instance="192.168.2.5:9100",job="kubernetes-service-endpoints",kubernetes_name="node-exporter",kubernetes_namespace="default",mode="user",nodename="deploy01",release="prometheus"}
 ```
 
-再透過ansible，一個pod起來時，動態import datasource與dashborad json file
+再與grafana內建變數(Variables)的功能，來顯示多台主機與namespace呈現的結果。
+
+![dashboard1](images/dashboard1.png)
+
+![dashboard2](images/dashboard2.png)
+
+再透過ansible，當一個pod起來時，動態import datasource與dashborad json file，參考![這邊](https://github.com/sayya9/k8s-grafana/tree/master/helm/grafana/imports)
+
+
