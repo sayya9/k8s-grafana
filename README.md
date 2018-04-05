@@ -16,9 +16,10 @@ helm install -n your_release_name --namespace=your_namespace .
 DashBoard
 =======
 
-此repository的k8s dashboard參考![官方](https://grafana.com/dashboards)，docker container與host dashboard則參考這個github ![stefanprodan/dockprom](https://github.com/stefanprodan/dockprom)，另外採用group_left來使兩個不同的metrics產生關聯。
+此repository的k8s dashboard參考[官方](https://grafana.com/dashboards)，docker container與host dashboard則參考這個github [stefanprodan/dockprom](https://github.com/stefanprodan/dockprom)，另外採用group_left來使兩個不同的metrics產生關聯。
 
-例如：想在dashboard上以主機名稱方式呈現
+例如：想在dashboard上以主機名稱方式呈現，但instance預設就是給IP，怎麼跟主機名稱相關？
+
 node_cpu{mode="user"} 產生的結果如下，instance為IP
 
 ```
@@ -48,10 +49,22 @@ node_uname_info{nodename="deploy01"}
 
 再與grafana內建變數(Variables)的功能，來顯示多台主機與namespace呈現的結果。
 
+例如：Docker Containers dashboard的 System Load，裡面的公式：
+
+```
+sum(node_load1 * on(instance) group_left(nodename) node_uname_info{nodename=~"^$instance$"}) / count(node_load1 * on(instance) group_left(nodename) node_uname_info{nodename=~"^$instance$"})
+```
+
+後面的
+```
+* on(instance) group_left(nodename) node_uname_info{nodename=~"^$instance$"}
+```
+是我自己加的，這樣左上角切換就可以看到其他台server的使用情形，ALL就是所有server的計算平均
+
 ![dashboard1](images/dashboard1.png)
 
 ![dashboard2](images/dashboard2.png)
 
-再透過ansible，當一個pod起來時，動態import datasource與dashborad json file，參考![這邊](https://github.com/sayya9/k8s-grafana/tree/master/helm/grafana/imports)
+再透過ansible，當一個pod起來時，動態import datasource與dashborad json file，參考[這邊](https://github.com/sayya9/k8s-grafana/tree/master/helm/grafana/imports)
 
 
