@@ -3,8 +3,6 @@ kind: Service
 metadata:
   namespace: {{ .Release.Namespace }}
   name: grafana
-  annotations:
-    prometheus.io/probe: "true"
   labels:
 {{ include "labels" . | indent 4 }}
 spec:
